@@ -30,8 +30,12 @@ fun AuthNavigation(applicationContext: Context) {
             LoginScreen(navController = navController, viewModel = viewModel)
         }
         composable("home") {
-            // Replace with your home screen
-            Text("Home Screen")
+            val viewModel = ServiceLocator.providePortfolioViewModel(applicationContext)
+            HomeScreen(navController = navController, viewModel = viewModel)
+        }
+        composable("portfolio") {
+            val viewModel = ServiceLocator.providePortfolioViewModel(applicationContext)
+            PortfolioScreen(navController = navController, viewModel = viewModel)
         }
     }
 }
