@@ -21,10 +21,6 @@ fun HomeScreen(
 ) {
     val portfolioState by viewModel.portfolioState.collectAsState()
 
-    LaunchedEffect(key1 = true) {
-        viewModel.loadPortfolio()
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -107,7 +103,9 @@ fun HomeScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = { navController.navigate("portfolio") },
+            onClick = {
+                navController.navigate("portfolio")
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)

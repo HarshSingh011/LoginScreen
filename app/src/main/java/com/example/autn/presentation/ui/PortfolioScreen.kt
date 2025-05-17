@@ -1,46 +1,41 @@
 package com.example.autn.presentation.ui
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.autn.presentation.viewmodel.PortfolioViewModel
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PortfolioScreen(
     navController: NavController,
     viewModel: PortfolioViewModel
 ) {
     val portfolioState by viewModel.portfolioState.collectAsState()
-    var newSkill by remember { mutableStateOf("") }
-
-    val context = LocalContext.current
+    val skillInputText by viewModel.skillInputText.collectAsState()
+    val skillSuggestions by viewModel.skillSuggestions.collectAsState()
     val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
     val interactionSource = remember { MutableInteractionSource() }
 
-    LaunchedEffect(key1 = true) {
-        viewModel.loadPortfolio()
-    }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var collegeError by remember { mutableStateOf<String?>(null) }
+    var skillsError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -52,133 +47,182 @@ fun PortfolioScreen(
                 indication = null
             ) {
                 focusManager.clearFocus()
-                keyboardController?.hide()
-            },
-        horizontalAlignment = Alignment.CenterHorizontally
+            }
     ) {
         Text(
             text = "Edit Portfolio",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
         OutlinedTextField(
             value = portfolioState.name,
-            onValueChange = { viewModel.updateName(it) },
-            label = { Text("Your Name") },
+            onValueChange = {
+                viewModel.updateName(it)
+                nameError = null
+            },
+            label = { Text("Name") },
+            singleLine = true,
+            isError = nameError != null,
+            supportingText = {
+                nameError?.let { Text(it) }
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                .padding(vertical = 8.dp)
         )
 
         OutlinedTextField(
             value = portfolioState.college,
-            onValueChange = { viewModel.updateCollege(it) },
-            label = { Text("College Name") },
+            onValueChange = {
+                viewModel.updateCollege(it)
+                collegeError = null
+            },
+            label = { Text("College") },
+            singleLine = true,
+            isError = collegeError != null,
+            supportingText = {
+                collegeError?.let { Text(it) }
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                .padding(vertical = 8.dp)
         )
 
         Text(
             text = "Skills",
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .align(Alignment.Start)
-                .padding(top = 16.dp, bottom = 8.dp)
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+        )
+
+        OutlinedTextField(
+            value = skillInputText,
+            onValueChange = {
+                viewModel.updateSkillInput(it)
+                if (portfolioState.skills.size >= 3) {
+                    skillsError = null
+                }
+            },
+            label = { Text("Add Skill") },
+            singleLine = true,
+            isError = skillsError != null,
+            supportingText = {
+                skillsError?.let { Text(it) }
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    if (skillInputText.isNotEmpty()) {
+                        viewModel.addSkill(skillInputText)
+                    }
+                }
+            ),
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = {
+                    if (skillInputText.isNotEmpty()) {
+                        viewModel.addSkill(skillInputText)
+                    }
+                }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Skill")
+                }
+            }
+        )
+
+        if (skillSuggestions.isNotEmpty()) {
+            Text(
+                text = "Suggestions:",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+            )
+
+            LazyRow(
+                modifier = Modifier.padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(skillSuggestions) { suggestion ->
+                    SuggestionChip(
+                        onClick = {
+                            viewModel.addSkill(suggestion)
+                            focusManager.clearFocus()
+                        },
+                        label = { Text(suggestion) }
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = "Current Skills:",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
         )
 
         LazyColumn(
             modifier = Modifier
+                .weight(1f)
                 .fillMaxWidth()
-                .height(200.dp)
         ) {
             items(portfolioState.skills) { skill ->
-                Row(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(vertical = 4.dp)
                 ) {
-                    Text(
-                        text = skill,
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp)
-                    )
-                    IconButton(
-                        onClick = { viewModel.removeSkill(skill) }
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Remove Skill"
-                        )
-                    }
-                }
-                Divider()
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = newSkill,
-                onValueChange = { newSkill = it },
-                label = { Text("Add New Skill") },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        if (newSkill.isNotEmpty()) {
-                            viewModel.addSkill(newSkill)
-                            newSkill = ""
-                            keyboardController?.hide()
+                        Text(skill)
+                        IconButton(onClick = { viewModel.removeSkill(skill) }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Remove Skill")
                         }
                     }
-                )
-            )
-            IconButton(
-                onClick = {
-                    if (newSkill.isNotEmpty()) {
-                        viewModel.addSkill(newSkill)
-                        newSkill = ""
-                        keyboardController?.hide()
-                    }
                 }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Skill"
-                )
             }
         }
-
-        Spacer(modifier = Modifier.weight(1f))
 
         Button(
             onClick = {
-                viewModel.savePortfolio()
-                Toast.makeText(context, "Portfolio saved", Toast.LENGTH_SHORT).show()
-                navController.navigateUp()
+                var isValid = true
+
+                if (portfolioState.name.isBlank()) {
+                    nameError = "Name is required"
+                    isValid = false
+                }
+
+                if (portfolioState.college.isBlank()) {
+                    collegeError = "College is required"
+                    isValid = false
+                }
+
+                if (portfolioState.skills.size < 3) {
+                    skillsError = "At least 3 skills are required"
+                    isValid = false
+                }
+
+                if (isValid) {
+                    viewModel.savePortfolio()
+                    viewModel.loadPortfolio()
+                    navController.popBackStack()
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            enabled = portfolioState.name.isNotEmpty() && portfolioState.college.isNotEmpty()
-                    && portfolioState.skills.isNotEmpty()
+                .padding(top = 16.dp)
         ) {
-            Text("Save Portfolio")
+            Text("Save")
         }
     }
 }
