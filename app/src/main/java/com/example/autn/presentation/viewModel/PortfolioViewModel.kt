@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONArray
+import java.net.URL
+
+data class Quote(val text: String = "", val author: String = "")
 
 class PortfolioViewModel(
     private val getPortfolioUseCase: GetPortfolioUseCase,
@@ -24,7 +28,11 @@ class PortfolioViewModel(
     private val _skillInputText = MutableStateFlow("")
     val skillInputText = _skillInputText.asStateFlow()
 
-    private var dataLoaded = false
+    private val _quoteState = MutableStateFlow(Quote())
+    val quoteState: StateFlow<Quote> = _quoteState.asStateFlow()
+
+    private val _isQuoteLoading = MutableStateFlow(false)
+    val isQuoteLoading: StateFlow<Boolean> = _isQuoteLoading.asStateFlow()
 
     private val predefinedSkills = listOf(
         "Web Development", "Android Development", "iOS Development",
@@ -38,21 +46,40 @@ class PortfolioViewModel(
     val skillSuggestions = _skillSuggestions.asStateFlow()
 
     fun loadPortfolio() {
-        if (dataLoaded) return
-
         viewModelScope.launch {
             try {
                 val portfolio = getPortfolioUseCase()
-
-                if (portfolio.name.isNotEmpty() || portfolio.college.isNotEmpty() || portfolio.skills.isNotEmpty()) {
-                    _portfolioState.value = portfolio
-                    Log.d("PortfolioViewModel", "Loaded portfolio: ${portfolio.name}, ${portfolio.college}, ${portfolio.skills.size} skills")
-                }
-
-                dataLoaded = true
+                _portfolioState.value = portfolio
+                Log.d("PortfolioViewModel", "Loaded portfolio: ${portfolio.name}, ${portfolio.college}, ${portfolio.skills.size} skills")
             } catch (e: Exception) {
                 Log.e("PortfolioViewModel", "Error loading portfolio", e)
-                dataLoaded = true
+            }
+        }
+    }
+
+    fun fetchQuote() {
+        viewModelScope.launch {
+            _isQuoteLoading.value = true
+            try {
+                val response = kotlin.runCatching {
+                    val jsonStr = URL("https://zenquotes.io/api/today").readText()
+                    val jsonArray = JSONArray(jsonStr)
+                    val jsonObject = jsonArray.getJSONObject(0)
+                    val text = jsonObject.getString("q")
+                    val author = jsonObject.getString("a")
+                    Quote(text, author)
+                }.getOrElse {
+                    Log.e("PortfolioViewModel", "Error fetching quote", it)
+                    Quote(
+                        "Sometimes you have to lose all you have to find out who you truly are.",
+                        "Roy T. Bennett"
+                    )
+                }
+
+                _quoteState.value = response
+                Log.d("PortfolioViewModel", "Fetched quote: ${response.text} - ${response.author}")
+            } finally {
+                _isQuoteLoading.value = false
             }
         }
     }
