@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -21,10 +20,6 @@ fun HomeScreen(
     viewModel: PortfolioViewModel
 ) {
     val portfolioState by viewModel.portfolioState.collectAsState()
-
-    LaunchedEffect(key1 = true) {
-        viewModel.loadPortfolio()
-    }
 
     Column(
         modifier = Modifier
@@ -108,7 +103,9 @@ fun HomeScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = { navController.navigate("portfolio") },
+            onClick = {
+                navController.navigate("portfolio")
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)

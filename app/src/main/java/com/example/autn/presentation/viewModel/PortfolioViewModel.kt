@@ -1,5 +1,6 @@
 package com.example.autn.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.autn.domain.model.Portfolio
@@ -20,9 +21,39 @@ class PortfolioViewModel(
     private val _portfolioState = MutableStateFlow(Portfolio())
     val portfolioState: StateFlow<Portfolio> = _portfolioState.asStateFlow()
 
+    private val _skillInputText = MutableStateFlow("")
+    val skillInputText = _skillInputText.asStateFlow()
+
+    private var dataLoaded = false
+
+    private val predefinedSkills = listOf(
+        "Web Development", "Android Development", "iOS Development",
+        "Machine Learning", "Data Science", "UI/UX Design",
+        "JavaScript", "Python", "Kotlin", "Java", "Swift",
+        "React", "Flutter", "Node.js", "Firebase", "AWS",
+        "Database Management", "DevOps", "Git", "Agile Methodology"
+    )
+
+    private val _skillSuggestions = MutableStateFlow<List<String>>(emptyList())
+    val skillSuggestions = _skillSuggestions.asStateFlow()
+
     fun loadPortfolio() {
+        if (dataLoaded) return
+
         viewModelScope.launch {
-            _portfolioState.value = getPortfolioUseCase()
+            try {
+                val portfolio = getPortfolioUseCase()
+
+                if (portfolio.name.isNotEmpty() || portfolio.college.isNotEmpty() || portfolio.skills.isNotEmpty()) {
+                    _portfolioState.value = portfolio
+                    Log.d("PortfolioViewModel", "Loaded portfolio: ${portfolio.name}, ${portfolio.college}, ${portfolio.skills.size} skills")
+                }
+
+                dataLoaded = true
+            } catch (e: Exception) {
+                Log.e("PortfolioViewModel", "Error loading portfolio", e)
+                dataLoaded = true
+            }
         }
     }
 
@@ -34,12 +65,29 @@ class PortfolioViewModel(
         _portfolioState.value = _portfolioState.value.copy(college = college)
     }
 
+    fun updateSkillInput(input: String) {
+        _skillInputText.value = input
+        if (input.isNotEmpty()) {
+            _skillSuggestions.value = predefinedSkills.filter {
+                it.lowercase().contains(input.lowercase())
+            }
+        } else {
+            _skillSuggestions.value = emptyList()
+        }
+    }
+
+    fun clearSkillInput() {
+        _skillInputText.value = ""
+        _skillSuggestions.value = emptyList()
+    }
+
     fun addSkill(skill: String) {
         val currentSkills = _portfolioState.value.skills.toMutableList()
         if (skill.isNotEmpty() && !currentSkills.contains(skill)) {
             currentSkills.add(skill)
             _portfolioState.value = _portfolioState.value.copy(skills = currentSkills)
         }
+        clearSkillInput()
     }
 
     fun removeSkill(skill: String) {
@@ -50,7 +98,12 @@ class PortfolioViewModel(
 
     fun savePortfolio() {
         viewModelScope.launch {
-            savePortfolioUseCase(_portfolioState.value)
+            try {
+                savePortfolioUseCase(_portfolioState.value)
+                Log.d("PortfolioViewModel", "Saved portfolio: ${_portfolioState.value.name}, ${_portfolioState.value.college}, ${_portfolioState.value.skills.size} skills")
+            } catch (e: Exception) {
+                Log.e("PortfolioViewModel", "Error saving portfolio", e)
+            }
         }
     }
 
