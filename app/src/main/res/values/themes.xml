@@ -2,4 +2,16 @@
 <resources>
 
     <style name="Theme.Autn" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.Autn.Splash" parent="Theme.SplashScreen">
+        <!-- Background color for the splash screen -->
+        <item name="windowSplashScreenBackground">@color/white</item>
+
+        <!-- Your logo that will be displayed -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/robokalam_cover</item>
+
+        <!-- Theme that will be used after splash screen is dismissed -->
+        <item name="postSplashScreenTheme">@style/Theme.Autn</item>
+    </style>
 </resources>
+

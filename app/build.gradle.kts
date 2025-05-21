@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")
 }
 
 android {
@@ -62,7 +63,14 @@ dependencies {
     implementation(libs.accompanist.navigation.animation)
     implementation(libs.androidx.material)
 
-    implementation("androidx.compose.material:material-icons-core:1.6.3")
-    implementation("androidx.compose.material:material-icons-extended:1.6.3")
+    implementation(libs.androidx.material.icons.core)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.room.ktx)
+    annotationProcessor(libs.androidx.room.compiler)
 
+    implementation("androidx.room:room-runtime:2.7.1")
+    implementation("androidx.room:room-ktx:2.7.1")
+    kapt("androidx.room:room-compiler:2.7.1")
+
+    implementation ("androidx.core:core-splashscreen:1.0.1")
 }
